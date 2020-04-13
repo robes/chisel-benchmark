@@ -46,21 +46,25 @@ def _mangle(s):
         return s
 
 
-def entities(label, ctypes, termcolumns, subconcepts):
+def entities(label, ctypes, termcolumns, termlistcolumns, max_termlistchoices, subconcepts):
     """Infinite generator of test entities.
 
     :param label: text label for this concept of entities.
     :param ctypes: list of column types to be generated
     :param termcolumns: list of term sets used to generate corresponding columns
+    :param termlistcolumns: list of term sets used to generate corresponding 'list' columns
+    :param max_termlistchoices: maximum number of terms to chose per termlistcolumn
     :param subconcepts: list of subconcepts embedded in these entities
     :return: a python generator that returns entities
     """
+    assert(type(max_termlistchoices) == int)
     key = 0
 
     # yield header
     yield [f'{label}:key'] + \
         [f'{label}:{ctype}:{i}' for i, ctype in enumerate(ctypes)] + \
         [f'{label}:term:{i}' for i, _ in enumerate(termcolumns)] + \
+        [f'{label}:termlist:{i}' for i, _ in enumerate(termlistcolumns)] + \
         [cname for subconcept in subconcepts for cname in subconcept[0]]
 
     # yield rows
@@ -68,6 +72,7 @@ def entities(label, ctypes, termcolumns, subconcepts):
         yield [key] + \
             [_gen_value[ctype]() for ctype in ctypes] + \
             [_mangle(random.choice(tc)) for tc in termcolumns] + \
+            [tl for tlc in termlistcolumns for tl in [','.join(map(_mangle, random.choices(tlc, k=random.randint(0, max_termlistchoices))))]] + \
             [value for subconcept in subconcepts for value in random.choice(subconcept[1:])]
         key = key + 1
 
@@ -82,6 +87,8 @@ def main():
     parser.add_argument('-t', '--terms', default='~/terms.txt', help='Filename of terms file (one term per line of text file)')
     parser.add_argument('-s', '--terms-sample-size', type=int, help='Number of terms to sample per termset created')
     parser.add_argument('--num-term-columns', type=int, default=1, help='Number of columns based on termsets to generate')
+    parser.add_argument('--num-term-list-columns', type=int, default=1, help='Number of "list" columns based on termsets to generate')
+    parser.add_argument('--max-term-list-choices', type=int, default=5, help='Maximum number of terms to chose per generated term list column value')
     parser.add_argument('--num-sub-concepts', type=int, default=1, help='Number of sub-concepts to generate')
     parser.add_argument('--num-sub-concept-rows', type=int, help='Number of rows per sub-concept to generate')
     args = parser.parse_args()
@@ -92,6 +99,8 @@ def main():
     termsource_filename = args.terms
     terms_sample_size = args.terms_sample_size or max(round(num_rows / 10), 10)
     num_termcolumns = args.num_term_columns
+    num_termlistcolumns = args.num_term_list_columns
+    max_termlistchoices = args.max_term_list_choices
     num_subconcepts = args.num_sub_concepts
     num_subconcept_rows = args.num_sub_concept_rows or max(round(num_rows / 2), 10)
 
@@ -104,13 +113,22 @@ def main():
         for i in range(num_termcolumns):
             termcolumns.append(random.sample(termsource, terms_sample_size))
 
+    # create term list columns
+    termlistcolumns = []
+    if num_termlistcolumns:
+        with open(os.path.expanduser(termsource_filename), 'r') as f:
+            termsource = f.read().splitlines()
+
+        for i in range(num_termlistcolumns):
+            termlistcolumns.append(random.sample(termsource, terms_sample_size))
+
     # create subconcepts that are just like main table but without their own subconcepts
     subconcepts = []
     for i in range(num_subconcepts):
-        subconcepts.append(list(itertools.islice(entities(f'subc{i}', ctypes, termcolumns, []), num_subconcept_rows+1)))
+        subconcepts.append(list(itertools.islice(entities(f'subc{i}', ctypes, termcolumns, termlistcolumns, max_termlistchoices, []), num_subconcept_rows+1)))
 
     csvwriter = csv.writer(sys.stdout)
-    for row in itertools.islice(entities(args.name, ctypes, termcolumns, subconcepts), num_rows+1):
+    for row in itertools.islice(entities(args.name, ctypes, termcolumns, termlistcolumns, max_termlistchoices, subconcepts), num_rows+1):
         csvwriter.writerow(row)
 
     return 0
