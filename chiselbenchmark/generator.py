@@ -69,7 +69,7 @@ def entities(label, ctypes, termcolumns, termlistcolumns, max_termlistchoices, s
 
     # yield rows
     while True:
-        yield [key] + \
+        yield [f'{label}:{key}'] + \
             [_gen_value[ctype]() for ctype in ctypes] + \
             [_mangle(random.choice(tc)) for tc in termcolumns] + \
             [tl for tlc in termlistcolumns for tl in [','.join(map(_mangle, random.choices(tlc, k=random.randint(0, max_termlistchoices))))]] + \
