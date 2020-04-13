@@ -14,7 +14,7 @@ min_int, max_int = (-99999, 99999)
 # length of generated text values
 text_len = 10
 
-# Value generators for support simple types
+# Value generators for supported simple types
 _gen_value = {
     str.__name__: lambda: ''.join(random.choices(string.ascii_letters + string.digits, k=text_len)),
     int.__name__: lambda: random.randint(min_int, max_int),
