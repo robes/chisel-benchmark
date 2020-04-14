@@ -82,13 +82,13 @@ _default_test_cases = _all_test_cases = [
 def main():
     """Main routine."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('dataset', help='Test dataset name')
+    parser.add_argument('dataset', help='Name of dataset table to be used')
     parser.add_argument('rounds', type=int, help='Number of rounds per test case')
     parser.add_argument('--sleep', type=int, default=1, help='Number of seconds to sleep between test cases')
     parser.add_argument('--catalog-path', default='~/benchmarks', help='Catalog path')
     parser.add_argument('--disable-teardown', default=False, action='store_true', help='Disable teardown for debug purposes')
     parser.add_argument('--conditions', nargs='*', choices=_all_conditions, default=_default_conditions, help='Conditions to be tested')
-    parser.add_argument('--testcases', nargs='*', choices=_all_test_cases, default=_default_test_cases, help='Name of test case')
+    parser.add_argument('--testcases', nargs='*', choices=_all_test_cases, default=_default_test_cases, help='Test cases to be run')
     args = parser.parse_args()
 
     # validate the disable teardown debug setting
