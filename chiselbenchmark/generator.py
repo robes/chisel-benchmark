@@ -97,12 +97,12 @@ def main():
     num_rows = args.num
     ctypes = args.ctypes
     termsource_filename = args.terms
-    terms_sample_size = args.terms_sample_size or max(round(num_rows / 10), 10)
+    terms_sample_size = args.terms_sample_size or max(round(num_rows / 20), 10)
     num_termcolumns = args.num_term_columns
     num_termlistcolumns = args.num_term_list_columns
     max_termlistchoices = args.max_term_list_choices
     num_subconcepts = args.num_sub_concepts
-    num_subconcept_rows = args.num_sub_concept_rows or max(round(num_rows / 2), 10)
+    num_subconcept_rows = args.num_sub_concept_rows or max(round(num_rows / 3), 10)
 
     # create term columns
     termcolumns = []
