@@ -86,10 +86,10 @@ def main():
                         default=[str.__name__, int.__name__, float.__name__], help='Column types to generate')
     parser.add_argument('-t', '--terms', default='~/terms.txt', help='Filename of terms file (one term per line of text file)')
     parser.add_argument('-s', '--terms-sample-size', type=int, help='Number of terms to sample per termset created')
-    parser.add_argument('--num-term-columns', type=int, default=1, help='Number of columns based on termsets to generate')
+    parser.add_argument('--num-term-columns', type=int, default=2, help='Number of columns based on termsets to generate')
     parser.add_argument('--num-term-list-columns', type=int, default=1, help='Number of "list" columns based on termsets to generate')
     parser.add_argument('--max-term-list-choices', type=int, default=5, help='Maximum number of terms to chose per generated term list column value')
-    parser.add_argument('--num-sub-concepts', type=int, default=1, help='Number of sub-concepts to generate')
+    parser.add_argument('--num-sub-concepts', type=int, default=3, help='Number of sub-concepts to generate')
     parser.add_argument('--num-sub-concept-rows', type=int, help='Number of rows per sub-concept to generate')
     args = parser.parse_args()
 
