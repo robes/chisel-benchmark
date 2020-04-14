@@ -22,6 +22,7 @@ _DATA, _SUBC = 'data', 'subc'
 _INT, _FLOAT, _TEXT = 'int', 'float', 'text'
 _TERM, _TERMLIST = 'term', 'termlist'
 _KEY = 'key'
+_EXT = '.csv'
 
 
 class LocalCatalogBaseTest:
@@ -63,19 +64,66 @@ class LocalCatalogBaseTest:
 class TestCore (LocalCatalogBaseTest):
     """Core test suite for benchmarks."""
 
+    def test_case_reify_one_concept(self, condition):
+        self._reify_concepts(condition, 1)
+
     def test_case_reify_two_concepts(self, condition):
+        self._reify_concepts(condition, 2)
+
+    def test_case_reify_three_concepts(self, condition):
+        self._reify_concepts(condition, 3)
+
+    def _reify_concepts(self, condition, num_concepts):
         t = self.catalog['.'][self.table_name]
-        subc0 = t.reify({t['subc0:key']}, {t['subc0:int:0'], t['subc0:term:2']})
-        subc1 = t.reify({t['subc1:key']}, {t['subc1:int:0'], t['subc1:term:2']})
         with self.catalog.evolve(consolidate=(condition != _CONDITION_CONTROL)):
-            self.catalog[self._output_schema]['subc0.csv'] = subc0
-            self.catalog[self._output_schema]['subc1.csv'] = subc1
+            exclude_from_altered = []
+            # reify concepts
+            for i in range(num_concepts):
+                # non key columns to reify into new concept
+                nonkey_columns = [t[cname] for cname in t.columns if cname.startswith(f'{_SUBC}{i}:') and _KEY not in cname]
+                # reify key, nonkeys
+                subc = t.reify({t[f'{_SUBC}{i}:{_KEY}']}, set(nonkey_columns))
+                # assign to catalog
+                self.catalog[self._output_schema][f'{_SUBC}{i}{_EXT}'] = subc
+                # remember nonkeys for exclusion from altered original table
+                exclude_from_altered.extend([c.name for c in nonkey_columns])
+
+            # alter orginal
+            print(exclude_from_altered)
+            altered = t.select(*[t[cname] for cname in t.columns if cname not in exclude_from_altered])
+            self.catalog[self._output_schema][f'{_DATA}{_EXT}'] = altered
+
+    def test_case_reify_one_subconcept(self, condition):
+        self._reify_subconcepts(condition, 1)
+
+    def test_case_reify_two_subconcepts(self, condition):
+        self._reify_subconcepts(condition, 2)
+
+    def test_case_reify_three_subconcepts(self, condition):
+        self._reify_subconcepts(condition, 3)
+
+    def _reify_subconcepts(self, condition, num_subconcepts):
+        t = self.catalog['.'][self.table_name]
+        with self.catalog.evolve(consolidate=(condition != _CONDITION_CONTROL)):
+            # reify subconcepts
+            for i in range(num_subconcepts):
+                # reify subconcept columns
+                subc = t.reify_sub(*[t[cname] for cname in t.columns if cname.startswith(f'{_SUBC}{i}:')])
+                # assign to catalog
+                self.catalog[self._output_schema][f'{_SUBC}{i}{_EXT}'] = subc
+
+            # alter orginal
+            altered = t.select(*[t[cname] for cname in t.columns if not cname.startswith(f'{_SUBC}{i}:')])
+            self.catalog[self._output_schema][f'{_DATA}{_EXT}'] = altered
 
 
 # Default test suite and test cases
 _default_test_suite = TestCore
 _default_test_cases = _all_test_cases = [
-    'reify_two_concepts'
+    'reify_one_concept',
+    'reify_two_concepts',
+    'reify_one_subconcept',
+    'reify_two_subconcepts'
 ]
 
 
@@ -99,14 +147,13 @@ def main():
     test_suite = _default_test_suite()
     test_suite.catalog_path = os.path.expanduser(args.catalog_path)
     test_suite.table_name = args.dataset
-    test_cases = _default_test_cases
 
     # disable automatic garbage collection
     gc.disable()
 
     # output header and commence tests
     print('test,dataset,condition,round,time')
-    for test_case in test_cases:
+    for test_case in args.testcases:
         for condition in args.conditions:
             for i in range(args.rounds):
                 # setup
