@@ -180,6 +180,44 @@ class TestCore (LocalCatalogBaseTest):
             for i in range(n):
                 self.catalog[self._output_schema][f'{_TERM}{i}{_EXT}'] = term_columns[i].to_vocabulary()
 
+    def test_case_create_n_relations_from_nested_values(self, condition, n=1):
+        """Create N relations from nested values (i.e., non-atomic values)."""
+        t = self.catalog['.'][self.table_name]
+        list_columns = [t[cname] for cname in t.columns if cname.find(_TERMLIST) >= 0]
+        assert(n <= len(list_columns))
+        with self.catalog.evolve(consolidate=(condition != _CONDITION_CONTROL)):
+            for i in range(n):
+                self.catalog[self._output_schema][f'{_TERMLIST}{i}{_EXT}'] = list_columns[i].to_atoms()
+
+    def test_case_reify_n_subconcepts_and_create_domain_from_columns(self, condition, n=1):
+        """Normalizes N subconcepts and creates a new domain from N like columns from subconcepts."""
+        t = self.catalog['.'][self.table_name]
+        with self.catalog.evolve(consolidate=(condition != _CONDITION_CONTROL)):
+            exclude_from_altered = []
+            term = None
+            # reify subconcepts
+            for i in range(n):
+                # list of columns to be reified
+                columns = [t[cname] for cname in t.columns if cname.startswith(f'{_SUBC}{i}:')]
+                exclude_from_altered.extend([c.name for c in columns])
+                # reify subconcept columns
+                subc = t.reify_sub(*columns)
+                # assign to catalog
+                self.catalog[self._output_schema][f'{_SUBC}{i}{_EXT}'] = subc
+                # collect up term columns and merge
+                termi = subc.select(subc[f'{_SUBC}{i}:{_TERM}:0'].alias(_TERM))
+                if i == 0:
+                    term = termi
+                else:
+                    term = term + termi
+
+            # create domain
+            dom = term[_TERM].to_domain()
+            self.catalog[self._output_schema][f'{_TERM}{_EXT}'] = dom
+
+            # alter original
+            altered = t.select(*[t[cname] for cname in t.columns if cname not in exclude_from_altered])
+            self.catalog[self._output_schema][f'{_CORE}{_EXT}'] = altered
 
 # Default test suite
 _default_test_suite = TestCore
@@ -191,7 +229,9 @@ _test_cases_and_params = {
     'reify_n_subconcepts_and_merge': [2, 3],
     'reify_concept_and_n_subconcepts': [1, 2],
     'create_n_domains_from_n_columns': [1, 2, 4],
-    'create_n_vocabularies_from_n_columns': [1, 2, 4]
+    'create_n_vocabularies_from_n_columns': [1, 2, 4],
+    'create_n_relations_from_nested_values': [1, 2, 4],
+    'reify_n_subconcepts_and_create_domain_from_columns': [1, 2, 3]
 }
 
 
