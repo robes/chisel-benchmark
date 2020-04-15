@@ -58,6 +58,7 @@ def entities(label, ctypes, termcolumns, termlistcolumns, max_termlistchoices, s
     :return: a python generator that returns entities
     """
     assert(type(max_termlistchoices) == int)
+    subconcepts_noheader = [subc[1:] for subc in subconcepts]
     key = 0
 
     # yield header
@@ -73,7 +74,7 @@ def entities(label, ctypes, termcolumns, termlistcolumns, max_termlistchoices, s
             [_gen_value[ctype]() for ctype in ctypes] + \
             [_mangle(random.choice(tc)) for tc in termcolumns] + \
             [tl for tlc in termlistcolumns for tl in [','.join(map(_mangle, random.choices(tlc, k=random.randint(0, max_termlistchoices))))]] + \
-            [value for subconcept in subconcepts for value in random.choice(subconcept[1:])]
+            [value for subconcept in subconcepts_noheader for value in random.choice(subconcept)]
         key = key + 1
 
 
