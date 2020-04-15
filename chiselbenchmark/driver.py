@@ -219,6 +219,29 @@ class TestCore (LocalCatalogBaseTest):
             altered = t.select(*[t[cname] for cname in t.columns if cname not in exclude_from_altered])
             self.catalog[self._output_schema][f'{_CORE}{_EXT}'] = altered
 
+    def test_case_create_vocabulary_then_align_and_tag(self, condition, n=1):
+        """Create a vocab from one termlist, then use it to create tags out of n other termlists."""
+        t = self.catalog['.'][self.table_name]
+        with self.catalog.evolve(consolidate=(condition != _CONDITION_CONTROL)):
+            # create canonical vocabulary from core termlist
+            src_column = f'{_CORE}:{_TERMLIST}:0'
+            vocab = t[src_column].to_atoms().columns[src_column].to_vocabulary()
+            self.catalog[self._output_schema][f'vocab{_EXT}'] = vocab
+
+            # align and tag from subconcept termlists
+            exclude_from_altered = []
+            for i in range(n):
+                # column to be aligned and tagified
+                column = t[f'{_SUBC}{i}:{_TERMLIST}:0']
+                exclude_from_altered.append(column.name)
+                tags = column.to_tags(vocab)
+                self.catalog[self._output_schema][f'{_SUBC}{i}-tags{_EXT}'] = tags
+
+            # alter original
+            altered = t.select(*[t[cname] for cname in t.columns if cname not in exclude_from_altered])
+            self.catalog[self._output_schema][f'{_CORE}{_EXT}'] = altered
+
+
 # Default test suite
 _default_test_suite = TestCore
 
@@ -231,7 +254,8 @@ _test_cases_and_params = {
     'create_n_domains_from_n_columns': [1, 2, 4],
     'create_n_vocabularies_from_n_columns': [1, 2, 4],
     'create_n_relations_from_nested_values': [1, 2, 4],
-    'reify_n_subconcepts_and_create_domain_from_columns': [1, 2, 3]
+    'reify_n_subconcepts_and_create_domain_from_columns': [1, 2, 3],
+    'create_vocabulary_then_align_and_tag': [1, 2, 3]
 }
 
 
