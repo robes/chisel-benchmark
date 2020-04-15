@@ -192,6 +192,30 @@ class TestCore (LocalCatalogBaseTest):
             altered = t.select(*[t[cname] for cname in t.columns if cname not in exclude_from_altered])
             self.catalog[self._output_schema][f'{_DATA}{_EXT}'] = altered
 
+    def test_case_create_domain_from_column(self, condition):
+        self._create_domain_from_column(condition, 1)
+
+    def _create_domain_from_column(self, condition, num_domains):
+        """Create N domains."""
+        t = self.catalog['.'][self.table_name]
+        term_columns = [t[cname] for cname in t.columns if cname.find(_TERM) >= 0 > cname.find(_TERMLIST)]
+        assert(num_domains <= len(term_columns))
+        with self.catalog.evolve(consolidate=(condition != _CONDITION_CONTROL)):
+            for i in range(num_domains):
+                self.catalog[self._output_schema][f'{_TERM}{i}{_EXT}'] = term_columns[i].to_domain() #(similarity_fn=None)
+
+    def test_case_create_vocabulary_from_column(self, condition):
+        self._create_vocabulary_from_column(condition, 1)
+
+    def _create_vocabulary_from_column(self, condition, num_domains):
+        """Create N domains."""
+        t = self.catalog['.'][self.table_name]
+        term_columns = [t[cname] for cname in t.columns if cname.find(_TERM) >= 0 > cname.find(_TERMLIST)]
+        assert(num_domains <= len(term_columns))
+        with self.catalog.evolve(consolidate=(condition != _CONDITION_CONTROL)):
+            for i in range(num_domains):
+                self.catalog[self._output_schema][f'{_TERM}{i}{_EXT}'] = term_columns[i].to_vocabulary()
+
 
 # Default test suite and test cases
 _default_test_suite = TestCore
@@ -205,7 +229,9 @@ _default_test_cases = _all_test_cases = [
     'reify_two_subconcepts_merged',
     'reify_three_subconcepts_merged',
     'reify_concept_and_one_subconcept',
-    'reify_concept_and_two_subconcepts'
+    'reify_concept_and_two_subconcepts',
+    'create_domain_from_column',
+    'create_vocabulary_from_column'
 ]
 
 
