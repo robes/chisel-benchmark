@@ -18,7 +18,7 @@ _all_conditions = _default_conditions = [
 ]
 
 # Test dataset column name parts
-_DATA, _SUBC = 'data', 'subc'
+_DATA, _SUBC, _CONC = 'data', 'subc', 'conc'
 _INT, _FLOAT, _TEXT = 'int', 'float', 'text'
 _TERM, _TERMLIST = 'term', 'termlist'
 _KEY = 'key'
@@ -74,6 +74,7 @@ class TestCore (LocalCatalogBaseTest):
         self._reify_concepts(condition, 3)
 
     def _reify_concepts(self, condition, num_concepts):
+        """Normalizes N concepts."""
         t = self.catalog['.'][self.table_name]
         with self.catalog.evolve(consolidate=(condition != _CONDITION_CONTROL)):
             exclude_from_altered = []
@@ -84,12 +85,11 @@ class TestCore (LocalCatalogBaseTest):
                 # reify key, nonkeys
                 subc = t.reify({t[f'{_SUBC}{i}:{_KEY}']}, set(nonkey_columns))
                 # assign to catalog
-                self.catalog[self._output_schema][f'{_SUBC}{i}{_EXT}'] = subc
+                self.catalog[self._output_schema][f'{_CONC}{i}{_EXT}'] = subc
                 # remember nonkeys for exclusion from altered original table
                 exclude_from_altered.extend([c.name for c in nonkey_columns])
 
             # alter orginal
-            print(exclude_from_altered)
             altered = t.select(*[t[cname] for cname in t.columns if cname not in exclude_from_altered])
             self.catalog[self._output_schema][f'{_DATA}{_EXT}'] = altered
 
@@ -103,17 +103,57 @@ class TestCore (LocalCatalogBaseTest):
         self._reify_subconcepts(condition, 3)
 
     def _reify_subconcepts(self, condition, num_subconcepts):
+        """Normalizes N subconcepts."""
         t = self.catalog['.'][self.table_name]
         with self.catalog.evolve(consolidate=(condition != _CONDITION_CONTROL)):
+            exclude_from_altered = []
             # reify subconcepts
             for i in range(num_subconcepts):
+                # list of columns to be reified
+                columns = [t[cname] for cname in t.columns if cname.startswith(f'{_SUBC}{i}:')]
+                exclude_from_altered.extend([c.name for c in columns])
                 # reify subconcept columns
-                subc = t.reify_sub(*[t[cname] for cname in t.columns if cname.startswith(f'{_SUBC}{i}:')])
+                subc = t.reify_sub(*columns)
                 # assign to catalog
                 self.catalog[self._output_schema][f'{_SUBC}{i}{_EXT}'] = subc
 
-            # alter orginal
-            altered = t.select(*[t[cname] for cname in t.columns if not cname.startswith(f'{_SUBC}{i}:')])
+            # alter original
+            altered = t.select(*[t[cname] for cname in t.columns if cname not in exclude_from_altered])
+            self.catalog[self._output_schema][f'{_DATA}{_EXT}'] = altered
+
+    def test_case_reify_two_subconcepts_merged(self, condition):
+        self._reify_subconcepts_merged(condition, 2)
+
+    def test_case_reify_three_subconcepts_merged(self, condition):
+        self._reify_subconcepts_merged(condition, 3)
+
+    def _reify_subconcepts_merged(self, condition, num_subconcepts):
+        """Normalize N subconcepts and merge them into one."""
+        t = self.catalog['.'][self.table_name]
+        with self.catalog.evolve(consolidate=(condition != _CONDITION_CONTROL)):
+            exclude_from_altered = []
+            subc0 = None
+            # reify subconcepts
+            for i in range(num_subconcepts):
+                # list of columns to be reified
+                columns = [t[cname] for cname in t.columns if cname.startswith(f'{_SUBC}{i}:')]
+                exclude_from_altered.extend([c.name for c in columns])
+                # reify ith subconcept
+                subci = t.reify_sub(*columns)
+                # merge subconcepts
+                if i == 0:
+                    subc0 = subci
+                else:
+                    subci = subci.select(*[
+                        subci[cname].alias(cname.replace(f'{_SUBC}{str(i)}', f'{_SUBC}0')) for cname in subci.columns
+                    ])
+                    subc0 = subc0 + subci
+
+            # assign to catalog
+            self.catalog[self._output_schema][f'{_SUBC}0{_EXT}'] = subc0
+
+            # alter original
+            altered = t.select(*[t[cname] for cname in t.columns if cname not in exclude_from_altered])
             self.catalog[self._output_schema][f'{_DATA}{_EXT}'] = altered
 
 
@@ -122,8 +162,12 @@ _default_test_suite = TestCore
 _default_test_cases = _all_test_cases = [
     'reify_one_concept',
     'reify_two_concepts',
+    'reify_three_concepts',
     'reify_one_subconcept',
-    'reify_two_subconcepts'
+    'reify_two_subconcepts',
+    'reify_three_subconcepts',
+    'reify_two_subconcepts_merged',
+    'reify_three_subconcepts_merged'
 ]
 
 
