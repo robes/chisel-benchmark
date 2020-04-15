@@ -64,22 +64,13 @@ class LocalCatalogBaseTest:
 class TestCore (LocalCatalogBaseTest):
     """Core test suite for benchmarks."""
 
-    def test_case_reify_one_concept(self, condition):
-        self._reify_concepts(condition, 1)
-
-    def test_case_reify_two_concepts(self, condition):
-        self._reify_concepts(condition, 2)
-
-    def test_case_reify_three_concepts(self, condition):
-        self._reify_concepts(condition, 3)
-
-    def _reify_concepts(self, condition, num_concepts):
+    def test_case_reify_n_concepts(self, condition, n=1):
         """Normalizes N concepts."""
         t = self.catalog['.'][self.table_name]
         with self.catalog.evolve(consolidate=(condition != _CONDITION_CONTROL)):
             exclude_from_altered = []
             # reify concepts
-            for i in range(num_concepts):
+            for i in range(n):
                 # non key columns to reify into new concept
                 nonkey_columns = [t[cname] for cname in t.columns if cname.startswith(f'{_SUBC}{i}:') and _KEY not in cname]
                 # reify key, nonkeys
@@ -93,22 +84,13 @@ class TestCore (LocalCatalogBaseTest):
             altered = t.select(*[t[cname] for cname in t.columns if cname not in exclude_from_altered])
             self.catalog[self._output_schema][f'{_CORE}{_EXT}'] = altered
 
-    def test_case_reify_one_subconcept(self, condition):
-        self._reify_subconcepts(condition, 1)
-
-    def test_case_reify_two_subconcepts(self, condition):
-        self._reify_subconcepts(condition, 2)
-
-    def test_case_reify_three_subconcepts(self, condition):
-        self._reify_subconcepts(condition, 3)
-
-    def _reify_subconcepts(self, condition, num_subconcepts):
+    def test_case_reify_n_subconcepts(self, condition, n=1):
         """Normalizes N subconcepts."""
         t = self.catalog['.'][self.table_name]
         with self.catalog.evolve(consolidate=(condition != _CONDITION_CONTROL)):
             exclude_from_altered = []
             # reify subconcepts
-            for i in range(num_subconcepts):
+            for i in range(n):
                 # list of columns to be reified
                 columns = [t[cname] for cname in t.columns if cname.startswith(f'{_SUBC}{i}:')]
                 exclude_from_altered.extend([c.name for c in columns])
@@ -121,20 +103,14 @@ class TestCore (LocalCatalogBaseTest):
             altered = t.select(*[t[cname] for cname in t.columns if cname not in exclude_from_altered])
             self.catalog[self._output_schema][f'{_CORE}{_EXT}'] = altered
 
-    def test_case_reify_two_subconcepts_merged(self, condition):
-        self._reify_subconcepts_merged(condition, 2)
-
-    def test_case_reify_three_subconcepts_merged(self, condition):
-        self._reify_subconcepts_merged(condition, 3)
-
-    def _reify_subconcepts_merged(self, condition, num_subconcepts):
+    def test_case_reify_n_subconcepts_and_merge(self, condition, n=2):
         """Normalize N subconcepts and merge them into one."""
         t = self.catalog['.'][self.table_name]
         with self.catalog.evolve(consolidate=(condition != _CONDITION_CONTROL)):
             exclude_from_altered = []
             subc0 = None
             # reify subconcepts
-            for i in range(num_subconcepts):
+            for i in range(n):
                 # list of columns to be reified
                 columns = [t[cname] for cname in t.columns if cname.startswith(f'{_SUBC}{i}:')]
                 exclude_from_altered.extend([c.name for c in columns])
@@ -156,13 +132,7 @@ class TestCore (LocalCatalogBaseTest):
             altered = t.select(*[t[cname] for cname in t.columns if cname not in exclude_from_altered])
             self.catalog[self._output_schema][f'{_CORE}{_EXT}'] = altered
 
-    def test_case_reify_concept_and_one_subconcept(self, condition):
-        self._reify_concept_and_subconcepts(condition, 1)
-
-    def test_case_reify_concept_and_two_subconcepts(self, condition):
-        self._reify_concept_and_subconcepts(condition, 2)
-
-    def _reify_concept_and_subconcepts(self, condition, num_subconcepts):
+    def test_case_reify_concept_and_n_subconcepts(self, condition, n=1):
         """Normalizes 1 concept and N subconcepts."""
         t = self.catalog['.'][self.table_name]
         with self.catalog.evolve(consolidate=(condition != _CONDITION_CONTROL)):
@@ -179,7 +149,7 @@ class TestCore (LocalCatalogBaseTest):
                 self.catalog[self._output_schema][f'{_CONC}{i}{_EXT}'] = subc
 
             # reify subconcepts
-            for i in range(1, num_subconcepts+1):
+            for i in range(1, n + 1):
                 # list of columns to be reified
                 columns = [t[cname] for cname in t.columns if cname.startswith(f'{_SUBC}{i}:')]
                 exclude_from_altered.extend([c.name for c in columns])
@@ -192,47 +162,37 @@ class TestCore (LocalCatalogBaseTest):
             altered = t.select(*[t[cname] for cname in t.columns if cname not in exclude_from_altered])
             self.catalog[self._output_schema][f'{_CORE}{_EXT}'] = altered
 
-    def test_case_create_domain_from_column(self, condition):
-        self._create_domain_from_column(condition, 1)
-
-    def _create_domain_from_column(self, condition, num_domains):
+    def test_case_create_n_domains_from_n_columns(self, condition, n=1):
         """Create N domains."""
         t = self.catalog['.'][self.table_name]
         term_columns = [t[cname] for cname in t.columns if cname.find(_TERM) >= 0 > cname.find(_TERMLIST)]
-        assert(num_domains <= len(term_columns))
+        assert(n <= len(term_columns))
         with self.catalog.evolve(consolidate=(condition != _CONDITION_CONTROL)):
-            for i in range(num_domains):
-                self.catalog[self._output_schema][f'{_TERM}{i}{_EXT}'] = term_columns[i].to_domain() #(similarity_fn=None)
+            for i in range(n):
+                self.catalog[self._output_schema][f'{_TERM}{i}{_EXT}'] = term_columns[i].to_domain()
 
-    def test_case_create_vocabulary_from_column(self, condition):
-        self._create_vocabulary_from_column(condition, 1)
-
-    def _create_vocabulary_from_column(self, condition, num_domains):
-        """Create N domains."""
+    def test_case_create_n_vocabularies_from_n_columns(self, condition, n=1):
+        """Create N vocabularies."""
         t = self.catalog['.'][self.table_name]
         term_columns = [t[cname] for cname in t.columns if cname.find(_TERM) >= 0 > cname.find(_TERMLIST)]
-        assert(num_domains <= len(term_columns))
+        assert(n <= len(term_columns))
         with self.catalog.evolve(consolidate=(condition != _CONDITION_CONTROL)):
-            for i in range(num_domains):
+            for i in range(n):
                 self.catalog[self._output_schema][f'{_TERM}{i}{_EXT}'] = term_columns[i].to_vocabulary()
 
 
-# Default test suite and test cases
+# Default test suite
 _default_test_suite = TestCore
-_default_test_cases = _all_test_cases = [
-    'reify_one_concept',
-    'reify_two_concepts',
-    'reify_three_concepts',
-    'reify_one_subconcept',
-    'reify_two_subconcepts',
-    'reify_three_subconcepts',
-    'reify_two_subconcepts_merged',
-    'reify_three_subconcepts_merged',
-    'reify_concept_and_one_subconcept',
-    'reify_concept_and_two_subconcepts',
-    'create_domain_from_column',
-    'create_vocabulary_from_column'
-]
+
+# Default test cases and params
+_test_cases_and_params = {
+    'reify_n_concepts': [1, 2, 3],
+    'reify_n_subconcepts': [1, 2, 3],
+    'reify_n_subconcepts_and_merge': [2, 3],
+    'reify_concept_and_n_subconcepts': [1, 2],
+    'create_n_domains_from_n_columns': [1, 2, 4],
+    'create_n_vocabularies_from_n_columns': [1, 2, 4]
+}
 
 
 def main():
@@ -244,12 +204,13 @@ def main():
     parser.add_argument('--catalog-path', default='~/benchmarks', help='Catalog path')
     parser.add_argument('--disable-teardown', default=False, action='store_true', help='Disable teardown for debug purposes')
     parser.add_argument('--conditions', nargs='*', choices=_all_conditions, default=_default_conditions, help='Conditions to be tested')
-    parser.add_argument('--testcases', nargs='*', choices=_all_test_cases, default=_default_test_cases, help='Test cases to be run')
+    parser.add_argument('--testcases', nargs='*', choices=_test_cases_and_params.keys(), default=_test_cases_and_params.keys(), help='Test cases to be run')
+    parser.add_argument('--params', nargs='*', type=int, help='Parameters for the test cases')
     args = parser.parse_args()
 
     # validate the disable teardown debug setting
-    if args.disable_teardown and (args.rounds > 1 or len(args.testcases) > 1 or len(args.conditions) > 1):
-        parser.error('Disable teardown can only be used with a single (round, single test case, condition) for debug purposes only')
+    if args.disable_teardown and (args.rounds > 1 or len(args.testcases) > 1 or len(args.conditions) > 1 or not args.params or len(args.params) > 1):
+        parser.error('Disable teardown can only be used with a single (round, test case, condition, param) for debug purposes only')
 
     # load and configure test suite
     test_suite = _default_test_suite()
@@ -260,29 +221,31 @@ def main():
     gc.disable()
 
     # output header and commence tests
-    print('test,dataset,condition,round,time')
+    print('test,dataset,param,condition,round,time')
     for test_case in args.testcases:
-        for condition in args.conditions:
-            for i in range(args.rounds):
-                # setup
-                test_suite.setUp()
-                test_case_fn = getattr(test_suite, f'test_case_{test_case}')
+        params = args.params or _test_cases_and_params[test_case]
+        for param in params:
+            for condition in args.conditions:
+                for i in range(args.rounds):
+                    # setup
+                    test_suite.setUp()
+                    test_case_fn = getattr(test_suite, f'test_case_{test_case}')
 
-                # measure time and run test case
-                s = time.process_time()
-                test_case_fn(condition)
-                t = (time.process_time() - s)
+                    # measure time and run test case
+                    s = time.process_time()
+                    test_case_fn(condition, n=param)
+                    t = (time.process_time() - s)
 
-                # output results
-                print(f'{test_case},{args.dataset},{condition},{i},{t}')
+                    # output results
+                    print(f'{test_case},{args.dataset},{param},{condition},{i},{t}')
 
-                # teardown (optional)
-                if not args.disable_teardown:
-                    test_suite.tearDown()
+                    # teardown (optional)
+                    if not args.disable_teardown:
+                        test_suite.tearDown()
 
-                # force garbage collect, and sleep (just to let system settle down before next round)
-                gc.collect()
-                time.sleep(args.sleep)
+                    # force garbage collect, and sleep (just to let system settle down before next round)
+                    gc.collect()
+                    time.sleep(args.sleep)
 
     return 0
 
