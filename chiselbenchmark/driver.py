@@ -42,7 +42,7 @@ class LocalCatalogBaseTest:
 
     @table_name.setter
     def table_name(self, value):
-        self._table_name = value
+        self._table_name = f'{value}{_EXT}'
 
     @property
     def catalog_path(self):
@@ -198,14 +198,14 @@ _test_cases_and_params = {
 def main():
     """Main routine."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('dataset', help='Name of dataset table to be used')
     parser.add_argument('rounds', type=int, help='Number of rounds per test case')
+    parser.add_argument('dataset', nargs='+', help='Datasets to be used for source table of each test')
     parser.add_argument('--sleep', type=int, default=1, help='Number of seconds to sleep between test cases')
     parser.add_argument('--catalog-path', default='~/benchmarks', help='Catalog path')
     parser.add_argument('--disable-teardown', default=False, action='store_true', help='Disable teardown for debug purposes')
-    parser.add_argument('--conditions', nargs='*', choices=_all_conditions, default=_default_conditions, help='Conditions to be tested')
-    parser.add_argument('--testcases', nargs='*', choices=_test_cases_and_params.keys(), default=_test_cases_and_params.keys(), help='Test cases to be run')
-    parser.add_argument('--params', nargs='*', type=int, help='Parameters for the test cases')
+    parser.add_argument('--conditions', nargs='+', choices=_all_conditions, default=_default_conditions, help='Conditions to be tested')
+    parser.add_argument('--testcases', nargs='+', choices=_test_cases_and_params.keys(), default=_test_cases_and_params.keys(), help='Test cases to be run')
+    parser.add_argument('--params', nargs='+', type=int, help='Parameters for the test cases')
     args = parser.parse_args()
 
     # validate the disable teardown debug setting
@@ -215,7 +215,6 @@ def main():
     # load and configure test suite
     test_suite = _default_test_suite()
     test_suite.catalog_path = os.path.expanduser(args.catalog_path)
-    test_suite.table_name = args.dataset
 
     # disable automatic garbage collection
     gc.disable()
@@ -223,29 +222,31 @@ def main():
     # output header and commence tests
     print('test,dataset,param,condition,round,time')
     for test_case in args.testcases:
-        params = args.params or _test_cases_and_params[test_case]
-        for param in params:
-            for condition in args.conditions:
-                for i in range(args.rounds):
-                    # setup
-                    test_suite.setUp()
-                    test_case_fn = getattr(test_suite, f'test_case_{test_case}')
+        for dataset in args.dataset:
+            test_suite.table_name = dataset
+            params = args.params or _test_cases_and_params[test_case]
+            for param in params:
+                for condition in args.conditions:
+                    for i in range(args.rounds):
+                        # setup
+                        test_suite.setUp()
+                        test_case_fn = getattr(test_suite, f'test_case_{test_case}')
 
-                    # measure time and run test case
-                    s = time.process_time()
-                    test_case_fn(condition, n=param)
-                    t = (time.process_time() - s)
+                        # measure time and run test case
+                        s = time.process_time()
+                        test_case_fn(condition, n=param)
+                        t = (time.process_time() - s)
 
-                    # output results
-                    print(f'{test_case},{args.dataset},{param},{condition},{i},{t}')
+                        # output results
+                        print(f'{test_case},{dataset},{param},{condition},{i},{t}')
 
-                    # teardown (optional)
-                    if not args.disable_teardown:
-                        test_suite.tearDown()
+                        # teardown (optional)
+                        if not args.disable_teardown:
+                            test_suite.tearDown()
 
-                    # force garbage collect, and sleep (just to let system settle down before next round)
-                    gc.collect()
-                    time.sleep(args.sleep)
+                        # force garbage collect, and sleep (just to let system settle down before next round)
+                        gc.collect()
+                        time.sleep(args.sleep)
 
     return 0
 
