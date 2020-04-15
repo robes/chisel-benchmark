@@ -18,7 +18,7 @@ _all_conditions = _default_conditions = [
 ]
 
 # Test dataset column name parts
-_DATA, _SUBC, _CONC = 'data', 'subc', 'conc'
+_CORE, _SUBC, _CONC = 'core', 'subc', 'conc'
 _INT, _FLOAT, _TEXT = 'int', 'float', 'text'
 _TERM, _TERMLIST = 'term', 'termlist'
 _KEY = 'key'
@@ -91,7 +91,7 @@ class TestCore (LocalCatalogBaseTest):
 
             # alter original
             altered = t.select(*[t[cname] for cname in t.columns if cname not in exclude_from_altered])
-            self.catalog[self._output_schema][f'{_DATA}{_EXT}'] = altered
+            self.catalog[self._output_schema][f'{_CORE}{_EXT}'] = altered
 
     def test_case_reify_one_subconcept(self, condition):
         self._reify_subconcepts(condition, 1)
@@ -119,7 +119,7 @@ class TestCore (LocalCatalogBaseTest):
 
             # alter original
             altered = t.select(*[t[cname] for cname in t.columns if cname not in exclude_from_altered])
-            self.catalog[self._output_schema][f'{_DATA}{_EXT}'] = altered
+            self.catalog[self._output_schema][f'{_CORE}{_EXT}'] = altered
 
     def test_case_reify_two_subconcepts_merged(self, condition):
         self._reify_subconcepts_merged(condition, 2)
@@ -154,7 +154,7 @@ class TestCore (LocalCatalogBaseTest):
 
             # alter original
             altered = t.select(*[t[cname] for cname in t.columns if cname not in exclude_from_altered])
-            self.catalog[self._output_schema][f'{_DATA}{_EXT}'] = altered
+            self.catalog[self._output_schema][f'{_CORE}{_EXT}'] = altered
 
     def test_case_reify_concept_and_one_subconcept(self, condition):
         self._reify_concept_and_subconcepts(condition, 1)
@@ -190,7 +190,7 @@ class TestCore (LocalCatalogBaseTest):
 
             # alter original
             altered = t.select(*[t[cname] for cname in t.columns if cname not in exclude_from_altered])
-            self.catalog[self._output_schema][f'{_DATA}{_EXT}'] = altered
+            self.catalog[self._output_schema][f'{_CORE}{_EXT}'] = altered
 
     def test_case_create_domain_from_column(self, condition):
         self._create_domain_from_column(condition, 1)

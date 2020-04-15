@@ -25,20 +25,20 @@ _gen_value = {
 def _mangle(s):
     """A simple probabilistic string mangler."""
     r = random.random()
-    if r < 0.1:
-        # all upper
-        return s.upper()
-    elif r < 0.2:
-        # all lower
+    if r < 0.01:
+        # all title case
+        return s.title()
+    elif r < 0.02:
+        # all lower case
         return s.lower()
-    elif r < 0.3:
+    elif r < 0.03:
         # append with whitespace
-        return s + ' ' * random.randint(1,3)
-    elif r < 0.4:
+        return s + ' '
+    elif r < 0.04:
         # random insertion
         i = random.randint(0, len(s))
-        return s[:i] + random.choice(string.ascii_letters) + s[i:]
-    elif r < 0.5:
+        return s[:i] + random.choice(string.ascii_lowercase) + s[i:]
+    elif r < 0.05:
         # random deletion
         i = random.randint(0, len(s))
         return s[:i] + s[i+1:]
@@ -82,11 +82,11 @@ def main():
     """Main routine."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('num', type=int, help='Number of entities to generate')
-    parser.add_argument('--name', default='data', help='Name of this class of entities')
+    parser.add_argument('--name', default='core', help='Name of this class of entities')
     parser.add_argument('-c', '--ctypes', nargs='*', choices=[str.__name__, int.__name__, float.__name__],
                         default=[str.__name__, int.__name__, float.__name__], help='Column types to generate')
     parser.add_argument('-t', '--terms', default='~/terms.txt', help='Filename of terms file (one term per line of text file)')
-    parser.add_argument('-s', '--terms-sample-size', type=int, help='Number of terms to sample per termset created')
+    parser.add_argument('-s', '--terms-sample-size', type=int, default=100, help='Number of terms to sample per termset created')
     parser.add_argument('--num-term-columns', type=int, default=2, help='Number of columns based on termsets to generate')
     parser.add_argument('--num-term-list-columns', type=int, default=1, help='Number of "list" columns based on termsets to generate')
     parser.add_argument('--max-term-list-choices', type=int, default=5, help='Maximum number of terms to chose per generated term list column value')
@@ -98,7 +98,7 @@ def main():
     num_rows = args.num
     ctypes = args.ctypes
     termsource_filename = args.terms
-    terms_sample_size = args.terms_sample_size or max(round(num_rows / 20), 10)
+    terms_sample_size = args.terms_sample_size
     num_termcolumns = args.num_term_columns
     num_termlistcolumns = args.num_term_list_columns
     max_termlistchoices = args.max_term_list_choices
