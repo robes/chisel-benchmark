@@ -65,11 +65,11 @@ def main():
         ax.set(xlabel='# rows in dataset', ylabel=f'time ({args.yunits})', title=f'{test_case.replace("_", " ").title()}')
         ax.legend()
 
-        if args.show:
-            plt.show()
-
         if args.save:
             plt.savefig(f'{test_case}.{args.format}', dpi=args.dpi, format=args.format)
+
+        if args.show:
+            plt.show()
 
     return 0
 
