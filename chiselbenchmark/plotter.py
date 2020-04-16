@@ -32,7 +32,7 @@ def main():
     with open(os.path.expanduser(args.file)) as csvfile:
         csvreader = csv.DictReader(csvfile)
         for row in csvreader:
-            results[row[_TESTCASE]][(row[_CONDITION], row[_PARAM])][int(row[_DATASET])].append(1000*float(row[_TIME]))
+            results[row[_TESTCASE]][(row[_CONDITION], int(row[_PARAM]))][int(row[_DATASET])].append(1000*float(row[_TIME]))
 
     # compute mean, std
     for result in results.values():
@@ -40,14 +40,26 @@ def main():
             for key in condition:
                 condition[key] = _stats(condition[key])
 
+    # line format per condition
+    fmt = {'control': '--', 'optimized': ''}
+
+    # color palette (colors 3 and 4 never appear together in the current plots)
+    colors = defaultdict(lambda: 'xkcd:teal blue', {1: 'xkcd:medium purple', 2: 'xkcd:orange'})
+    # colors = [None, 'xkcd:teal blue', 'xkcd:orange', 'xkcd:purple', 'xkcd:purple']
+    # colors = [None, 'xkcd:orange', 'xkcd:teal blue', 'xkcd:purple', 'xkcd:purple']
+    # colors = [None, 'xkcd:orange', 'xkcd:teal blue', 'xkcd:dark lime', 'xkcd:purple']
+    # colors = [None, 'xkcd:orange', 'xkcd:light navy blue', 'xkcd:dark lime', 'xkcd:purple']
+    # colors = [None, 'xkcd:orange', 'xkcd:greyblue', 'xkcd:dark lime', 'xkcd:purple']
+
     # plot figures
     for test_case in results:
         fig, ax = plt.subplots()
         for condition_param in results[test_case]:
             datasets, stats = zip(*results[test_case][condition_param].items())
             means, errs = zip(*stats)
-            fmt = '--' if condition_param[0] == 'control' else ''
-            ax.errorbar(datasets, means, yerr=errs, fmt=fmt, label=f'{condition_param[0]}, n={condition_param[1]}', capsize=1.5)
+            condition, param = condition_param
+            ax.errorbar(datasets, means, yerr=errs, label=f'{condition}, n={param}', fmt=fmt[condition],
+                        color=colors[param], ecolor='xkcd:red', lw=1.5, capsize=3, capthick=1.5)
             ax.set_xticks(datasets)
             ax.set_xscale('log')
 
