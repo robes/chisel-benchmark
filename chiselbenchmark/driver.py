@@ -245,7 +245,7 @@ class TestCore (LocalCatalogBaseTest):
 # Default test suite
 _default_test_suite = TestCore
 
-# Default test cases and params
+# All test cases and default params for each
 _test_cases_and_params = {
     'reify_n_concepts': [1, 2, 3],
     'reify_n_subconcepts': [1, 2, 3],
@@ -257,6 +257,8 @@ _test_cases_and_params = {
     'reify_n_subconcepts_and_create_domain_from_columns': [1, 2, 3],
     'create_vocabulary_then_align_and_tag': [1, 2]
 }
+# Default tests cases, exclude the most expensive test case(s)
+_default_test_cases = [_test_cases_and_params.keys() - ['create_vocabulary_then_align_and_tag']]
 
 
 def main():
@@ -268,7 +270,7 @@ def main():
     parser.add_argument('--catalog-path', default='~/benchmarks', help='Catalog path')
     parser.add_argument('--disable-teardown', default=False, action='store_true', help='Disable teardown for debug purposes')
     parser.add_argument('--conditions', nargs='+', choices=_all_conditions, default=_default_conditions, help='Conditions to be tested')
-    parser.add_argument('--testcases', nargs='+', choices=_test_cases_and_params.keys(), default=_test_cases_and_params.keys(), help='Test cases to be run')
+    parser.add_argument('--testcases', nargs='+', choices=_test_cases_and_params.keys(), default=_default_test_cases, help='Test cases to be run')
     parser.add_argument('--params', nargs='+', type=int, help='Parameters for the test cases')
     args = parser.parse_args()
 
