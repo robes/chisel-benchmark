@@ -25,31 +25,30 @@ def main():
     parser.add_argument('--show', default=False, action='store_true', help='Show each plot as it is generated')
     parser.add_argument('--format', default='png', help='Format to use when saving plot')
     parser.add_argument('--dpi', type=int, default=300, help='DPI when saving plot')
+    parser.add_argument('--yunits', choices=['s', 'ms'], default='s', help='Units for time y-axis')
     args = parser.parse_args()
 
-    # read results from spreadsheet
-    results = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-    with open(os.path.expanduser(args.file)) as csvfile:
-        csvreader = csv.DictReader(csvfile)
-        for row in csvreader:
-            results[row[_TESTCASE]][(row[_CONDITION], int(row[_PARAM]))][int(row[_DATASET])].append(1000*float(row[_TIME]))
-
-    # compute mean, std
-    for result in results.values():
-        for condition in result.values():
-            for key in condition:
-                condition[key] = _stats(condition[key])
+    # factor for y-units
+    yunits_factor = {'s': 1, 'ms': 1000}
 
     # line format per condition
     fmt = {'control': '--', 'optimized': ''}
 
     # color palette (colors 3 and 4 never appear together in the current plots)
     colors = defaultdict(lambda: 'xkcd:teal blue', {1: 'xkcd:medium purple', 2: 'xkcd:orange'})
-    # colors = [None, 'xkcd:teal blue', 'xkcd:orange', 'xkcd:purple', 'xkcd:purple']
-    # colors = [None, 'xkcd:orange', 'xkcd:teal blue', 'xkcd:purple', 'xkcd:purple']
-    # colors = [None, 'xkcd:orange', 'xkcd:teal blue', 'xkcd:dark lime', 'xkcd:purple']
-    # colors = [None, 'xkcd:orange', 'xkcd:light navy blue', 'xkcd:dark lime', 'xkcd:purple']
-    # colors = [None, 'xkcd:orange', 'xkcd:greyblue', 'xkcd:dark lime', 'xkcd:purple']
+
+    # read results from spreadsheet
+    results = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    with open(os.path.expanduser(args.file)) as csvfile:
+        csvreader = csv.DictReader(csvfile)
+        for row in csvreader:
+            results[row[_TESTCASE]][(row[_CONDITION], int(row[_PARAM]))][int(row[_DATASET])].append(yunits_factor[args.yunits]*float(row[_TIME]))
+
+    # compute mean, std
+    for result in results.values():
+        for condition in result.values():
+            for key in condition:
+                condition[key] = _stats(condition[key])
 
     # plot figures
     for test_case in results:
@@ -63,7 +62,7 @@ def main():
             ax.set_xticks(datasets)
             ax.set_xscale('log')
 
-        ax.set(xlabel='# rows in dataset', ylabel='time (ms)', title=f'{test_case.replace("_", " ").title()}')
+        ax.set(xlabel='# rows in dataset', ylabel=f'time ({args.yunits})', title=f'{test_case.replace("_", " ").title()}')
         ax.legend()
 
         if args.show:
