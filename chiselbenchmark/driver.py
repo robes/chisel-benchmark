@@ -8,7 +8,6 @@ import shutil
 import sys
 import chisel
 
-
 # Test conditions
 _CONDITION_OPTIMIZED = 'optimized'
 _CONDITION_CONTROL = 'control'
