@@ -257,7 +257,7 @@ _test_cases_and_params = {
     'create_vocabulary_then_align_and_tag': [1, 2]
 }
 # Default tests cases, exclude the most expensive test case(s)
-_default_test_cases = [_test_cases_and_params.keys() - ['create_vocabulary_then_align_and_tag']]
+_default_test_cases = _test_cases_and_params.keys() - ['create_vocabulary_then_align_and_tag']
 
 
 def main():
