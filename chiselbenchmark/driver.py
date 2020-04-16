@@ -255,7 +255,7 @@ _test_cases_and_params = {
     'create_n_vocabularies_from_n_columns': [1, 2, 4],
     'create_n_relations_from_nested_values': [1, 2, 4],
     'reify_n_subconcepts_and_create_domain_from_columns': [1, 2, 3],
-    'create_vocabulary_then_align_and_tag': [1, 2, 3]
+    'create_vocabulary_then_align_and_tag': [1, 2]
 }
 
 
