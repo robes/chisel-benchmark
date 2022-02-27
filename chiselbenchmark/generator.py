@@ -46,7 +46,7 @@ def _mangle(s):
         return s
 
 
-def entities(label, ctypes, termcolumns, termlistcolumns, max_termlistchoices, subconcepts):
+def entities(label, ctypes, termcolumns, termlistcolumns, max_termlistchoices, subconcepts, camel=False):
     """Infinite generator of test entities.
 
     :param label: text label for this concept of entities.
@@ -55,18 +55,25 @@ def entities(label, ctypes, termcolumns, termlistcolumns, max_termlistchoices, s
     :param termlistcolumns: list of term sets used to generate corresponding 'list' columns
     :param max_termlistchoices: maximum number of terms to chose per termlistcolumn
     :param subconcepts: list of subconcepts embedded in these entities
+    :param camel: use came case names in the header row
     :return: a python generator that returns entities
     """
     assert(type(max_termlistchoices) == int)
     subconcepts_noheader = [subc[1:] for subc in subconcepts]
     key = 0
 
-    # yield header
-    yield [f'{label}:key'] + \
+    # header fields
+    header = [f'{label}:key'] + \
         [f'{label}:{ctype}:{i}' for i, ctype in enumerate(ctypes)] + \
         [f'{label}:term:{i}' for i, _ in enumerate(termcolumns)] + \
         [f'{label}:termlist:{i}' for i, _ in enumerate(termlistcolumns)] + \
         [cname for subconcept in subconcepts for cname in subconcept[0]]
+
+    # came-case if needed
+    header = [''.join([namepart.title() if namepart != 'key' else 'Id' for namepart in name.split(':')]) for name in header] if camel else header
+
+    # yield header
+    yield header
 
     # yield rows
     while True:
@@ -92,6 +99,7 @@ def main():
     parser.add_argument('--max-term-list-choices', type=int, default=5, help='Maximum number of terms to chose per generated term list column value')
     parser.add_argument('--num-sub-concepts', type=int, default=3, help='Number of sub-concepts to generate')
     parser.add_argument('--num-sub-concept-rows', type=int, help='Number of rows per sub-concept to generate')
+    parser.add_argument('--camel', action='store_true', help='Use camel case header names')
     args = parser.parse_args()
 
     # validate arguments
@@ -126,10 +134,10 @@ def main():
     # create subconcepts that are just like main table but without their own subconcepts
     subconcepts = []
     for i in range(num_subconcepts):
-        subconcepts.append(list(itertools.islice(entities(f'subc{i}', ctypes, termcolumns, termlistcolumns, max_termlistchoices, []), num_subconcept_rows+1)))
+        subconcepts.append(list(itertools.islice(entities(f'subc{i}', ctypes, termcolumns, termlistcolumns, max_termlistchoices, [], camel=args.camel), num_subconcept_rows+1)))
 
     csvwriter = csv.writer(sys.stdout)
-    for row in itertools.islice(entities(args.name, ctypes, termcolumns, termlistcolumns, max_termlistchoices, subconcepts), num_rows+1):
+    for row in itertools.islice(entities(args.name, ctypes, termcolumns, termlistcolumns, max_termlistchoices, subconcepts, camel=args.camel), num_rows+1):
         csvwriter.writerow(row)
 
     return 0
